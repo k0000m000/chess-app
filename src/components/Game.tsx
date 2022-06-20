@@ -394,8 +394,10 @@ const Game: React.FC = () => {
     }
   };
 
+  const new = ()
+
   const defaultBoard: Board = [
-    [null, Piece, Piece, Piece, Piece, Piece, Piece, Piece],
+    [blackRook, Piece, Piece, Piece, Piece, Piece, Piece, Piece],
     [Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece],
     [null, Piece, Piece, Piece, Piece, Piece, Piece, Piece],
     [Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece],
