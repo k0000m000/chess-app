@@ -30,7 +30,7 @@ const Game: React.FC = () => {
       return null;
     }
 
-    pieceExists(pieces: Piece[]): OptinalPice {
+    piece(pieces: Piece[]): OptinalPiece {
       for (let piece of pieces) {
         if (this === piece.position) {
           return piece;
@@ -57,9 +57,11 @@ const Game: React.FC = () => {
     abstract positionsCanMoveTo(pieces: Piece[]): Position[];
     abstract picesCanGet(pieces: Piece[]): Piece[];
   }
-  type OptinalPice = Piece | null;
+  type OptinalPiece = Piece | null;
+
   class Pawn extends Piece {
     type = "pawn";
+
     positionsCanMoveTo(pieces: Piece[]) {
       if (!this.position) {
         return [];
@@ -79,12 +81,335 @@ const Game: React.FC = () => {
           this.player === "White"
             ? this.position.addNumber(0, i)
             : this.position.addNumber(0, -i);
-        if (!nextPosition || nextPosition.pieceExists(pieces)) {
+        if (nextPosition && !nextPosition.piece(pieces)) {
+          positionsCanMoveTo.push(nextPosition);
+        }
+      }
+      return positionsCanMoveTo;
+    }
+
+    picesCanGet(pieces: Piece[]): Piece[] {
+      if (!this.position) {
+        return [];
+      }
+      let piecesCanGet: Piece[] = [];
+      for (let direction of [
+        [-1, 1],
+        [1, 1],
+      ]) {
+        const nextPosition =
+          this.player === "White"
+            ? this.position.addNumber(direction[0], direction[1])
+            : this.position.addNumber(direction[0], -direction[1]);
+        if (nextPosition) {
+          const getPiece = nextPosition.piece(pieces);
+          if (getPiece) {
+            piecesCanGet.push(getPiece);
+          }
+        }
+      }
+      return piecesCanGet;
+    }
+  }
+
+  class Knight extends Piece {
+    type = "knight";
+    positionsCanMoveTo(pieces: Piece[]) {
+      if (!this.position) {
+        return [];
+      }
+      let positionsCanMoveTo: Position[] = [];
+      for (let direction of [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+      ]) {
+        for (let i of [1, 2]) {
+          for (let j of [1, 2]) {
+            if (i !== j) {
+              const nextPosition = this.position.addNumber(
+                i * direction[0],
+                j * direction[1]
+              );
+              if (nextPosition && !nextPosition.piece(pieces)) {
+                positionsCanMoveTo.push(nextPosition);
+              }
+            }
+          }
+        }
+      }
+
+      return positionsCanMoveTo;
+    }
+    picesCanGet(pieces: Piece[]): Piece[] {
+      if (!this.position) {
+        return [];
+      }
+      let piecesCanGet: Piece[] = [];
+      for (let direction of [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+      ]) {
+        for (let i of [1, 2]) {
+          for (let j of [1, 2]) {
+            if (i !== j) {
+              const nextPosition = this.position.addNumber(
+                i * direction[0],
+                j * direction[1]
+              );
+              if (nextPosition) {
+                const getPiece = nextPosition.piece(pieces);
+                if (getPiece) {
+                  piecesCanGet.push(getPiece);
+                }
+              }
+            }
+          }
+        }
+      }
+      return piecesCanGet;
+    }
+  }
+
+  class Bishop extends Piece {
+    type = "bishop";
+    positionsCanMoveTo(pieces: Piece[]) {
+      if (!this.position) {
+        return [];
+      }
+      let positionsCanMoveTo: Position[] = [];
+      for (let direction of [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+      ]) {
+        for (let i = 1; i < boardSize; i++) {
+          const nextPosition = this.position.addNumber(
+            i * direction[0],
+            i * direction[1]
+          );
+          if (!nextPosition || (nextPosition && nextPosition.piece(pieces))) {
+            break;
+          }
+          positionsCanMoveTo.push(nextPosition);
+        }
+      }
+
+      return positionsCanMoveTo;
+    }
+    picesCanGet(pieces: Piece[]): Piece[] {
+      if (!this.position) {
+        return [];
+      }
+      let piecesCanGet: Piece[] = [];
+      for (let direction of [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+      ]) {
+        for (let i = 1; i < boardSize; i++) {
+          const nextPosition = this.position.addNumber(
+            i * direction[0],
+            i * direction[1]
+          );
+          if (!nextPosition) {
+            break;
+          }
+          const pieceGet = nextPosition.piece(pieces);
+          if (pieceGet) {
+            piecesCanGet.push(pieceGet);
+            break;
+          }
+        }
+      }
+      return piecesCanGet;
+    }
+  }
+
+  class Rook extends Piece {
+    type = "rook";
+    positionsCanMoveTo(pieces: Piece[]) {
+      if (!this.position) {
+        return [];
+      }
+      let positionsCanMoveTo: Position[] = [];
+      for (let direction of [
+        [-1, 0],
+        [0, -1],
+        [0, 1],
+        [1, 0],
+      ]) {
+        for (let i = 1; i < boardSize; i++) {
+          const nextPosition = this.position.addNumber(
+            i * direction[0],
+            i * direction[1]
+          );
+          if (!nextPosition || (nextPosition && nextPosition.piece(pieces))) {
+            break;
+          }
+          positionsCanMoveTo.push(nextPosition);
+        }
+      }
+
+      return positionsCanMoveTo;
+    }
+    picesCanGet(pieces: Piece[]): Piece[] {
+      if (!this.position) {
+        return [];
+      }
+      let piecesCanGet: Piece[] = [];
+      for (let direction of [
+        [-1, 0],
+        [0, -1],
+        [0, 1],
+        [1, 0],
+      ]) {
+        for (let i = 1; i < boardSize; i++) {
+          const nextPosition = this.position.addNumber(
+            i * direction[0],
+            i * direction[1]
+          );
+          if (!nextPosition) {
+            break;
+          }
+          const pieceGet = nextPosition.piece(pieces);
+          if (pieceGet) {
+            piecesCanGet.push(pieceGet);
+            break;
+          }
+        }
+      }
+      return piecesCanGet;
+    }
+  }
+
+  class Queen extends Piece {
+    type = "queen";
+    positionsCanMoveTo(pieces: Piece[]) {
+      if (!this.position) {
+        return [];
+      }
+      let positionsCanMoveTo: Position[] = [];
+      for (let direction of [
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+        [-1, 0],
+        [0, -1],
+        [0, 1],
+        [1, 0],
+      ]) {
+        for (let i = 1; i < boardSize; i++) {
+          const nextPosition = this.position.addNumber(
+            i * direction[0],
+            i * direction[1]
+          );
+          if (!nextPosition || (nextPosition && nextPosition.piece(pieces))) {
+            break;
+          }
+          positionsCanMoveTo.push(nextPosition);
+        }
+      }
+
+      return positionsCanMoveTo;
+    }
+    picesCanGet(pieces: Piece[]): Piece[] {
+      if (!this.position) {
+        return [];
+      }
+      let piecesCanGet: Piece[] = [];
+      for (let direction of [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+        [-1, 0],
+        [0, -1],
+        [0, 1],
+        [1, 0],
+      ]) {
+        for (let i = 1; i < boardSize; i++) {
+          const nextPosition = this.position.addNumber(
+            i * direction[0],
+            i * direction[1]
+          );
+          if (!nextPosition) {
+            break;
+          }
+          const pieceGet = nextPosition.piece(pieces);
+          if (pieceGet) {
+            piecesCanGet.push(pieceGet);
+            break;
+          }
+        }
+      }
+      return piecesCanGet;
+    }
+  }
+
+  class King extends Piece {
+    type = "king";
+    positionsCanMoveTo(pieces: Piece[]) {
+      if (!this.position) {
+        return [];
+      }
+      let positionsCanMoveTo: Position[] = [];
+      for (let direction of [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+        [-1, 0],
+        [0, -1],
+        [0, 1],
+        [1, 0],
+      ]) {
+        const nextPosition = this.position.addNumber(
+          direction[0],
+          direction[1]
+        );
+        if (!nextPosition || (nextPosition && nextPosition.piece(pieces))) {
           break;
         }
         positionsCanMoveTo.push(nextPosition);
       }
+
       return positionsCanMoveTo;
+    }
+    picesCanGet(pieces: Piece[]): Piece[] {
+      if (!this.position) {
+        return [];
+      }
+      let piecesCanGet: Piece[] = [];
+      for (let direction of [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+        [-1, 0],
+        [0, -1],
+        [0, 1],
+        [1, 0],
+      ]) {
+        const nextPosition = this.position.addNumber(
+          direction[0],
+          direction[1]
+        );
+        if (!nextPosition) {
+          break;
+        }
+        const pieceGet = nextPosition.piece(pieces);
+        if (pieceGet) {
+          piecesCanGet.push(pieceGet);
+          break;
+        }
+      }
+      return piecesCanGet;
     }
   }
 
