@@ -7,36 +7,44 @@ const Game: React.FC = () => {
   type Playler = "Black" | "White";
   type File = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
   type Rank = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8";
-  type Index = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-  //mapをつくるもしくはnextを作る
-  // const fileToIndex = (file: File): Index => {
-  //   return file.charCodeAt(0) as Index;
-  // };
-  // const indexToFile = (index: Index): File => {
-  //   return "ABCDEFGH"[index] as File;
-  // };
-  // const rankToIndex = (rank: Rank): Index => {
-  //   return (Number(rank) - 1) as Index;
-  // };
-  // const indexToRank = (index: Index): File => {
-  //   return "012345678"[index] as File;
-  // };
+  type OptinalFile = File | null;
+  type OptinalRank = Rank | null;
 
   class Position {
-    file: Index;
-    rank: Index;
-    constructor(file: Index, rank: Index) {
+    file: File;
+    rank: Rank;
+    constructor(file: File, rank: Rank) {
       this.file = file;
       this.rank = rank;
+    }
+    addNumber(fileNumber: number, rankNumber: number): OptionalPosition {
+      let fileIndex = this.file.charCodeAt(0) - "A".charCodeAt(0);
+      fileIndex += fileNumber;
+      let rankIndex = this.rank.charCodeAt(0) - "0".charCodeAt(0);
+      rankIndex += rankNumber;
+      const fileMap: File[] = ["A", "B", "C", "D", "E", "F", "G", "H"];
+      const rankMap: Rank[] = ["1", "2", "3", "4", "5", "6", "7", "8"];
+      if (fileMap[fileIndex] && rankMap[rankIndex]) {
+        return new Position(fileMap[fileIndex], rankMap[rankIndex]);
+      }
+      return null;
+    }
+
+    pieceExists(pieces: Piece[]): OptinalPice {
+      for (let piece of pieces) {
+        if (this === piece.position) {
+          return piece;
+        }
+      }
+      return null;
     }
   }
   type OptionalPosition = Position | null;
 
   abstract class Piece {
     position: OptionalPosition;
-    constructor(readonly player: Playler, file: Index, rank: Index) {
-      this.position = { file, rank };
+    constructor(readonly player: Playler, file: File, rank: Rank) {
+      this.position = new Position(file, rank);
     }
     abstract type: string;
     moveTo(position: Position) {
@@ -46,119 +54,37 @@ const Game: React.FC = () => {
       this.position = piece.position;
       piece.position = null;
     }
-    abstract positionsCanMoveTo(pieces: Piece[]): OptionalPosition[];
-    abstract picesCanGet(board: Board): Piece[];
+    abstract positionsCanMoveTo(pieces: Piece[]): Position[];
+    abstract picesCanGet(pieces: Piece[]): Piece[];
   }
   type OptinalPice = Piece | null;
-  type Board = [
-    [
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice
-    ],
-    [
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice
-    ],
-    [
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice
-    ],
-    [
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice
-    ],
-    [
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice
-    ],
-    [
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice
-    ],
-    [
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice
-    ],
-    [
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice,
-      OptinalPice
-    ]
-  ];
-  const piecesToBoard = (pieces: Piece[]): Board => {
-    let board: Board = Array(boardSize).fill(
-      Array(boardSize).fill(null)
-    ) as Board;
-    for (let piece of pieces) {
-      if (!piece.position) {
-        continue;
-      }
-      board[piece.position.file][piece.position.rank] = piece;
-    }
-    return board;
-  };
-
   class Pawn extends Piece {
     type = "pawn";
     positionsCanMoveTo(pieces: Piece[]) {
       if (!this.position) {
-        return [null];
+        return [];
       }
       let positionsCanMoveTo: Position[] = [];
-      if (this.player == "White") {
-        const nextPosition: Position = new Position(
-          this.position.file,
-          this.position.rank
-        );
+      for (let i = 0; i <= 2; i++) {
+        if (
+          i === 2 &&
+          !(
+            (this.player === "White" && this.position.rank === "2") ||
+            (this.player === "Black" && this.position.rank === "6")
+          )
+        ) {
+          break;
+        }
+        const nextPosition =
+          this.player === "White"
+            ? this.position.addNumber(0, i)
+            : this.position.addNumber(0, -i);
+        if (!nextPosition || nextPosition.pieceExists(pieces)) {
+          break;
+        }
+        positionsCanMoveTo.push(nextPosition);
       }
-      return [];
+      return positionsCanMoveTo;
     }
   }
 
