@@ -11,14 +11,13 @@ import useGame, {
 } from "./useGame";
 
 const Game: React.FC = () => {
-  const { gameState, select, handleClick } = useGame();
-
+  const { gameState, select, player, handleClick } = useGame();
   return <Board gameState={gameState} onClick={handleClick}></Board>;
 };
 
 interface BoardProps {
   gameState: GameState;
-  onClick: (position: Position) => React.MouseEventHandler<HTMLAnchorElement>;
+  onClick: (position: Position) => React.MouseEventHandler<HTMLButtonElement>;
 }
 
 const Board: React.FC<BoardProps> = (props) => {
@@ -47,7 +46,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
 interface SquareProps {
   piece: OptinalPiece;
-  onClick: React.MouseEventHandler<HTMLAnchorElement>;
+  onClick: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 const Square: React.FC<SquareProps> = (props) => {
@@ -69,8 +68,9 @@ const Square: React.FC<SquareProps> = (props) => {
     }
   }
 
-  const Wrapper = styled.div`
+  const Square = styled.button`
     border: 1px solid #999;
+    background: #fff;
     float: left;
     font-size: 24px;
     font-weight: bold;
@@ -81,7 +81,7 @@ const Square: React.FC<SquareProps> = (props) => {
     width: 40px;
   `;
 
-  return <Wrapper>{visual}</Wrapper>;
+  return <Square onClick={props.onClick}>{visual}</Square>;
 };
 
 export default Game;

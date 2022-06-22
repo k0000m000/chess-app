@@ -452,6 +452,7 @@ const useGame = () => {
       if (!select) {
         const piece = position.piece(gameState);
         if (piece && piece.player === player) {
+          alert("hoge");
           setSelect(piece);
         }
       } else {
