@@ -1,11 +1,10 @@
-import React, { useState } from "react";
-import styled from "styled-components";
+import { useState } from "react";
 
-const boardSize = 8;
-type Playler = "Black" | "White";
-type File = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
-type Rank = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8";
-class Position {
+export const boardSize = 8;
+export type Player = "Black" | "White";
+export type File = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
+export type Rank = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8";
+export class Position {
   file: File;
   rank: Rank;
   constructor(file: File, rank: Rank) {
@@ -40,25 +39,20 @@ class Position {
   }
 
   piece(gameState: GameState): OptinalPiece {
-    for (let piece of gameState) {
-      if (piece.position) {
-        const file = piece.position.file;
-        const rank = piece.position.rank;
-        if (piece.position.equal(this)) {
-          return piece;
-        }
-      }
+    const piece = gameState.find((piece) => piece.position?.equal(this));
+    if (piece) {
+      return piece;
     }
     return null;
   }
 }
-type OptionalPosition = Position | null;
-type GameState = Piece[];
+export type OptionalPosition = Position | null;
+export type GameState = Piece[];
 
-abstract class Piece {
+export abstract class Piece {
   position: OptionalPosition;
   type: string = "piece";
-  constructor(readonly player: Playler, file: File, rank: Rank) {
+  constructor(readonly player: Player, file: File, rank: Rank) {
     this.position = new Position(file, rank);
   }
   equal(piece: Piece): boolean {
@@ -73,23 +67,23 @@ abstract class Piece {
   moveTo(position: Position) {
     this.position = position;
   }
-  get(piece: Piece) {
+  moveToget(piece: Piece) {
     this.position = piece.position;
     piece.position = null;
   }
-  abstract positionsCanMoveTo(gameState: GameState): Position[];
-  abstract picesCanGet(gameState: GameState): Piece[];
+  abstract canMoveTo(gameState: GameState): Position[];
+  abstract canMoveToGet(gameState: GameState): Position[];
 }
-type OptinalPiece = Piece | null;
+export type OptinalPiece = Piece | null;
 
-class Pawn extends Piece {
+export class Pawn extends Piece {
   type = "pawn";
 
-  positionsCanMoveTo(gameState: GameState) {
+  canMoveTo(gameState: GameState) {
     if (!this.position) {
       return [];
     }
-    let positionsCanMoveTo: Position[] = [];
+    let canMoveTo: Position[] = [];
     for (let i = 0; i <= 2; i++) {
       if (
         i === 2 &&
@@ -105,17 +99,17 @@ class Pawn extends Piece {
           ? this.position.addNumber(0, i)
           : this.position.addNumber(0, -i);
       if (nextPosition && !nextPosition.piece(gameState)) {
-        positionsCanMoveTo.push(nextPosition);
+        canMoveTo.push(nextPosition);
       }
     }
-    return positionsCanMoveTo;
+    return canMoveTo;
   }
 
-  picesCanGet(gameState: GameState): Piece[] {
+  canMoveToGet(gameState: GameState): Position[] {
     if (!this.position) {
       return [];
     }
-    let piecesCanGet: Piece[] = [];
+    let canMoveToGet: Position[] = [];
     for (let direction of [
       [-1, 1],
       [1, 1],
@@ -124,24 +118,21 @@ class Pawn extends Piece {
         this.player === "White"
           ? this.position.addNumber(direction[0], direction[1])
           : this.position.addNumber(direction[0], -direction[1]);
-      if (nextPosition) {
-        const getPiece = nextPosition.piece(gameState);
-        if (getPiece) {
-          piecesCanGet.push(getPiece);
-        }
+      if (nextPosition && nextPosition.piece(gameState)) {
+        canMoveToGet.push(nextPosition);
       }
     }
-    return piecesCanGet;
+    return canMoveToGet;
   }
 }
 
-class Knight extends Piece {
+export class Knight extends Piece {
   type = "knight";
-  positionsCanMoveTo(pieces: Piece[]) {
+  canMoveTo(pieces: Piece[]) {
     if (!this.position) {
       return [];
     }
-    let positionsCanMoveTo: Position[] = [];
+    let canMoveTo: Position[] = [];
     for (let direction of [
       [-1, -1],
       [-1, 1],
@@ -156,20 +147,20 @@ class Knight extends Piece {
               j * direction[1]
             );
             if (nextPosition && !nextPosition.piece(pieces)) {
-              positionsCanMoveTo.push(nextPosition);
+              canMoveTo.push(nextPosition);
             }
           }
         }
       }
     }
 
-    return positionsCanMoveTo;
+    return canMoveTo;
   }
-  picesCanGet(pieces: Piece[]): Piece[] {
+  canMoveToGet(gameState: GameState): Position[] {
     if (!this.position) {
       return [];
     }
-    let piecesCanGet: Piece[] = [];
+    let canMoveToGet: Position[] = [];
     for (let direction of [
       [-1, -1],
       [-1, 1],
@@ -183,27 +174,24 @@ class Knight extends Piece {
               i * direction[0],
               j * direction[1]
             );
-            if (nextPosition) {
-              const getPiece = nextPosition.piece(pieces);
-              if (getPiece) {
-                piecesCanGet.push(getPiece);
-              }
+            if (nextPosition && nextPosition.piece(gameState)) {
+              canMoveToGet.push(nextPosition);
             }
           }
         }
       }
     }
-    return piecesCanGet;
+    return canMoveToGet;
   }
 }
 
-class Bishop extends Piece {
+export class Bishop extends Piece {
   type = "bishop";
-  positionsCanMoveTo(gameState: GameState) {
+  canMoveTo(gameState: GameState) {
     if (!this.position) {
       return [];
     }
-    let positionsCanMoveTo: Position[] = [];
+    let canMoveTo: Position[] = [];
     for (let direction of [
       [-1, -1],
       [-1, 1],
@@ -218,17 +206,17 @@ class Bishop extends Piece {
         if (!nextPosition || (nextPosition && nextPosition.piece(gameState))) {
           break;
         }
-        positionsCanMoveTo.push(nextPosition);
+        canMoveTo.push(nextPosition);
       }
     }
 
-    return positionsCanMoveTo;
+    return canMoveTo;
   }
-  picesCanGet(gameState: GameState): Piece[] {
+  canMoveToGet(gameState: GameState): Position[] {
     if (!this.position) {
       return [];
     }
-    let piecesCanGet: Piece[] = [];
+    let canMoveToGet: Position[] = [];
     for (let direction of [
       [-1, -1],
       [-1, 1],
@@ -243,24 +231,23 @@ class Bishop extends Piece {
         if (!nextPosition) {
           break;
         }
-        const pieceGet = nextPosition.piece(gameState);
-        if (pieceGet) {
-          piecesCanGet.push(pieceGet);
-          break;
+        if (nextPosition.piece(gameState)) {
+          canMoveToGet.push(nextPosition);
         }
+        break;
       }
     }
-    return piecesCanGet;
+    return canMoveToGet;
   }
 }
 
-class Rook extends Piece {
+export class Rook extends Piece {
   type = "rook";
-  positionsCanMoveTo(gameState: GameState) {
+  canMoveTo(gameState: GameState): Position[] {
     if (!this.position) {
       return [];
     }
-    let positionsCanMoveTo: Position[] = [];
+    let canMoveTo: Position[] = [];
     for (let direction of [
       [-1, 0],
       [0, -1],
@@ -275,17 +262,17 @@ class Rook extends Piece {
         if (!nextPosition || (nextPosition && nextPosition.piece(gameState))) {
           break;
         }
-        positionsCanMoveTo.push(nextPosition);
+        canMoveTo.push(nextPosition);
       }
     }
 
-    return positionsCanMoveTo;
+    return canMoveTo;
   }
-  picesCanGet(gameState: GameState): Piece[] {
+  canMoveToGet(gameState: GameState): Position[] {
     if (!this.position) {
       return [];
     }
-    let piecesCanGet: Piece[] = [];
+    let canMoveToGet: Position[] = [];
     for (let direction of [
       [-1, 0],
       [0, -1],
@@ -300,24 +287,22 @@ class Rook extends Piece {
         if (!nextPosition) {
           break;
         }
-        const pieceGet = nextPosition.piece(gameState);
-        if (pieceGet) {
-          piecesCanGet.push(pieceGet);
-          break;
+        if (nextPosition.piece(gameState)) {
+          canMoveToGet.push(nextPosition);
         }
       }
     }
-    return piecesCanGet;
+    return canMoveToGet;
   }
 }
 
-class Queen extends Piece {
+export class Queen extends Piece {
   type = "queen";
-  positionsCanMoveTo(gameState: GameState) {
+  canMoveTo(gameState: GameState) {
     if (!this.position) {
       return [];
     }
-    let positionsCanMoveTo: Position[] = [];
+    let canMoveTo: Position[] = [];
     for (let direction of [
       [-1, 1],
       [1, -1],
@@ -335,17 +320,17 @@ class Queen extends Piece {
         if (!nextPosition || (nextPosition && nextPosition.piece(gameState))) {
           break;
         }
-        positionsCanMoveTo.push(nextPosition);
+        canMoveTo.push(nextPosition);
       }
     }
 
-    return positionsCanMoveTo;
+    return canMoveTo;
   }
-  picesCanGet(gameState: GameState): Piece[] {
+  canMoveToGet(gameState: GameState): Position[] {
     if (!this.position) {
       return [];
     }
-    let piecesCanGet: Piece[] = [];
+    let canMoveToGet: Position[] = [];
     for (let direction of [
       [-1, -1],
       [-1, 1],
@@ -364,24 +349,22 @@ class Queen extends Piece {
         if (!nextPosition) {
           break;
         }
-        const pieceGet = nextPosition.piece(gameState);
-        if (pieceGet) {
-          piecesCanGet.push(pieceGet);
-          break;
+        if (nextPosition.piece(gameState)) {
+          canMoveToGet.push(nextPosition);
         }
       }
     }
-    return piecesCanGet;
+    return canMoveToGet;
   }
 }
 
-class King extends Piece {
+export class King extends Piece {
   type = "king";
-  positionsCanMoveTo(gameState: GameState) {
+  canMoveTo(gameState: GameState) {
     if (!this.position) {
       return [];
     }
-    let positionsCanMoveTo: Position[] = [];
+    let canMoveTo: Position[] = [];
     for (let direction of [
       [-1, -1],
       [-1, 1],
@@ -396,16 +379,16 @@ class King extends Piece {
       if (!nextPosition || (nextPosition && nextPosition.piece(gameState))) {
         break;
       }
-      positionsCanMoveTo.push(nextPosition);
+      canMoveTo.push(nextPosition);
     }
 
-    return positionsCanMoveTo;
+    return canMoveTo;
   }
-  picesCanGet(gameState: GameState): Piece[] {
+  canMoveToGet(gameState: GameState): Position[] {
     if (!this.position) {
       return [];
     }
-    let piecesCanGet: Piece[] = [];
+    let canMoveToGet: Position[] = [];
     for (let direction of [
       [-1, -1],
       [-1, 1],
@@ -420,123 +403,70 @@ class King extends Piece {
       if (!nextPosition) {
         break;
       }
-      const pieceGet = nextPosition.piece(gameState);
-      if (pieceGet) {
-        piecesCanGet.push(pieceGet);
-        break;
+      if (nextPosition.piece(gameState)) {
+        canMoveToGet.push(nextPosition);
       }
     }
-    return piecesCanGet;
+    return canMoveToGet;
   }
 }
 
-const Game: React.FC = () => {
-  class Game {
-    state: GameState = [];
-    constructor() {
-      for (let playler of ["White", "Black"] as const) {
-        for (let file of ["A", "B", "C", "D", "E", "F", "G", "H"] as const) {
-          const pawnRank = playler === "White" ? "2" : "7";
-          this.state.push(new Pawn(playler, file, pawnRank));
-        }
-        const rank = playler === "White" ? "1" : "8";
-        for (let file of ["C", "F"] as const) {
-          this.state.push(new Knight(playler, file, rank));
-        }
-        for (let file of ["B", "G"] as const) {
-          this.state.push(new Bishop(playler, file, rank));
-        }
-        for (let file of ["A", "H"] as const) {
-          this.state.push(new Rook(playler, file, rank));
-        }
-        const queenFile = "D";
-        this.state.push(new Queen(playler, queenFile, rank));
-        const kinfFile = "E";
-        this.state.push(new King(playler, kinfFile, rank));
-      }
+const useGame = () => {
+  const defaultGameState: GameState = [];
+
+  for (let playler of ["White", "Black"] as const) {
+    for (let file of ["A", "B", "C", "D", "E", "F", "G", "H"] as const) {
+      const pawnRank = playler === "White" ? "2" : "7";
+      defaultGameState.push(new Pawn(playler, file, pawnRank));
     }
+    const rank = playler === "White" ? "1" : "8";
+    for (let file of ["C", "F"] as const) {
+      defaultGameState.push(new Knight(playler, file, rank));
+    }
+    for (let file of ["B", "G"] as const) {
+      defaultGameState.push(new Bishop(playler, file, rank));
+    }
+    for (let file of ["A", "H"] as const) {
+      defaultGameState.push(new Rook(playler, file, rank));
+    }
+    const queenFile = "D";
+    defaultGameState.push(new Queen(playler, queenFile, rank));
+    const kinfFile = "E";
+    defaultGameState.push(new King(playler, kinfFile, rank));
   }
-  const [game, setGame] = useState<Game>(new Game());
+
+  const [gameState, setGameState] = useState<GameState>(defaultGameState);
+  const [player, setPlayer] = useState<Player>("White");
+
   type Select = false | Piece;
+  const [select, setSelect] = useState<Select>(false);
 
-  const [isSelect, setIsSelext] = useState<Select>(false);
+  const move = () => {
+    setGameState(gameState);
+    setPlayer(player === "White" ? "Black" : "White");
+    setSelect(false);
+  };
 
-  return <Board gameState={game.state} onClick={handleClick()}></Board>;
+  const handleClick = (position: Position) => {
+    return () => {
+      if (!select) {
+        const piece = position.piece(gameState);
+        if (piece && piece.player === player) {
+          setSelect(piece);
+        }
+      } else {
+        if (position.in(select.canMoveTo(gameState))) {
+          gameState.find((piece) => piece.equal(select))?.moveTo(position);
+          move();
+        } else if (position.in(select.canMoveToGet(gameState))) {
+          gameState.find((piece) => piece.equal(select))?.moveTo(position);
+          move();
+        }
+      }
+    };
+  };
+
+  return { gameState, select, player, handleClick };
 };
 
-interface BoardProps {
-  gameState: GameState;
-  onClick: (
-    file: File,
-    rank: Rank
-  ) => React.MouseEventHandler<HTMLAnchorElement>;
-}
-
-const Board: React.FC<BoardProps> = (props) => {
-  const fileList: File[] = ["A", "B", "C", "D", "E", "F", "G", "H"];
-  const rankList: Rank[] = ["1", "2", "3", "4", "5", "6", "7", "8"];
-
-  const squares = rankList.map((rank) =>
-    fileList.map((file) => {
-      const position = new Position(file, rank);
-      return (
-        <Square
-          piece={position.piece(props.gameState)}
-          onClick={props.onClick(file, rank)}
-        />
-      );
-    })
-  );
-
-  const Wrapper = styled.div`
-    display: grid;
-    grid-template-columns: repeat(${boardSize}, 1fr);
-    width: 320px;
-  `;
-  return <Wrapper>{squares}</Wrapper>;
-};
-
-interface SquareProps {
-  piece: OptinalPiece;
-  onClick: React.MouseEventHandler<HTMLAnchorElement>;
-}
-
-const Square: React.FC<SquareProps> = (props) => {
-  // ジェネリックでよりよく書ける
-  let visual = "";
-  if (props.piece) {
-    if (props.piece.type === "pawn") {
-      visual = "P";
-    } else if (props.piece.type === "knight") {
-      visual = "N";
-    } else if (props.piece.type === "bishop") {
-      visual = "B";
-    } else if (props.piece.type === "rook") {
-      visual = "R";
-    } else if (props.piece.type === "queen") {
-      visual = "Q";
-    } else if (props.piece.type === "king") {
-      visual = "K";
-    }
-  }
-
-  const Wrapper = styled.div`
-    border: 1px solid #999;
-    float: left;
-    font-size: 24px;
-    font-weight: bold;
-    height: 40px;
-    margin: 0px;
-    padding: 0;
-    text-align: center;
-    width: 40px;
-  `;
-
-  return (
-    <Wrapper>
-      <a onClick={props.onClick}>{visual}</a>
-    </Wrapper>
-  );
-};
-
-export default Game;
+export default useGame;
