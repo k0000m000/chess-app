@@ -22,7 +22,7 @@ interface BoardProps {
 
 const Board: React.FC<BoardProps> = (props) => {
   const fileList: File[] = ["A", "B", "C", "D", "E", "F", "G", "H"];
-  const rankList: Rank[] = ["1", "2", "3", "4", "5", "6", "7", "8"];
+  const rankList: Rank[] = ["8", "7", "6", "5", "4", "3", "2", "1"];
 
   const squares = rankList.map((rank) =>
     fileList.map((file) => {
@@ -69,9 +69,10 @@ const Square: React.FC<SquareProps> = (props) => {
 
   const Square = styled.button`
     border: 1px solid #999;
-    background: #fff;
+    background: #c0c0c0;
     float: left;
     font-size: 24px;
+    fonr-color: ${props.piece?.player === "White" ? "#fff" : "#000"}
     font-weight: bold;
     height: 40px;
     margin: 0px;

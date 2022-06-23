@@ -28,8 +28,10 @@ export class Position {
   addNumber(fileNumber: number, rankNumber: number): OptionalPosition {
     let fileIndex = this.file.charCodeAt(0) - "A".charCodeAt(0);
     fileIndex += fileNumber;
-    let rankIndex = this.rank.charCodeAt(0) - "0".charCodeAt(0);
+
+    let rankIndex = this.rank.charCodeAt(0) - "1".charCodeAt(0);
     rankIndex += rankNumber;
+
     const fileMap: File[] = ["A", "B", "C", "D", "E", "F", "G", "H"];
     const rankMap: Rank[] = ["1", "2", "3", "4", "5", "6", "7", "8"];
     if (fileMap[fileIndex] && rankMap[rankIndex]) {
@@ -47,6 +49,7 @@ export class Position {
   }
 }
 export type OptionalPosition = Position | null;
+
 export type GameState = Piece[];
 
 export abstract class Piece {
@@ -67,12 +70,12 @@ export abstract class Piece {
   moveTo(position: Position) {
     this.position = position;
   }
-  moveToget(piece: Piece) {
-    this.position = piece.position;
-    piece.position = null;
+
+  removed() {
+    this.position = null;
   }
+
   abstract canMoveTo(gameState: GameState): Position[];
-  abstract canMoveToGet(gameState: GameState): Position[];
 }
 export type OptinalPiece = Piece | null;
 
@@ -84,12 +87,12 @@ export class Pawn extends Piece {
       return [];
     }
     let canMoveTo: Position[] = [];
-    for (let i = 0; i <= 2; i++) {
+    for (let i = 1; i <= 2; i++) {
       if (
         i === 2 &&
         !(
           (this.player === "White" && this.position.rank === "2") ||
-          (this.player === "Black" && this.position.rank === "6")
+          (this.player === "Black" && this.position.rank === "7")
         )
       ) {
         break;
@@ -100,35 +103,30 @@ export class Pawn extends Piece {
           : this.position.addNumber(0, -i);
       if (nextPosition && !nextPosition.piece(gameState)) {
         canMoveTo.push(nextPosition);
+      } else {
+        break;
       }
     }
-    return canMoveTo;
-  }
-
-  canMoveToGet(gameState: GameState): Position[] {
-    if (!this.position) {
-      return [];
-    }
-    let canMoveToGet: Position[] = [];
     for (let direction of [
-      [-1, 1],
-      [1, 1],
+      [-1, 0],
+      [1, 0],
     ]) {
       const nextPosition =
         this.player === "White"
-          ? this.position.addNumber(direction[0], direction[1])
-          : this.position.addNumber(direction[0], -direction[1]);
+          ? this.position.addNumber(direction[0], 1)
+          : this.position.addNumber(direction[1], -1);
       if (nextPosition && nextPosition.piece(gameState)) {
-        canMoveToGet.push(nextPosition);
+        canMoveTo.push(nextPosition);
       }
     }
-    return canMoveToGet;
+
+    return canMoveTo;
   }
 }
 
 export class Knight extends Piece {
   type = "knight";
-  canMoveTo(pieces: Piece[]) {
+  canMoveTo(gameState: Piece[]) {
     if (!this.position) {
       return [];
     }
@@ -146,8 +144,13 @@ export class Knight extends Piece {
               i * direction[0],
               j * direction[1]
             );
-            if (nextPosition && !nextPosition.piece(pieces)) {
-              canMoveTo.push(nextPosition);
+            if (nextPosition) {
+              const nextPositionPiece = nextPosition.piece(gameState);
+              if (
+                !nextPositionPiece ||
+                (nextPositionPiece && nextPositionPiece.player === this.player)
+              )
+                canMoveTo.push(nextPosition);
             }
           }
         }
@@ -155,33 +158,6 @@ export class Knight extends Piece {
     }
 
     return canMoveTo;
-  }
-  canMoveToGet(gameState: GameState): Position[] {
-    if (!this.position) {
-      return [];
-    }
-    let canMoveToGet: Position[] = [];
-    for (let direction of [
-      [-1, -1],
-      [-1, 1],
-      [1, -1],
-      [1, 1],
-    ]) {
-      for (let i of [1, 2]) {
-        for (let j of [1, 2]) {
-          if (i !== j) {
-            const nextPosition = this.position.addNumber(
-              i * direction[0],
-              j * direction[1]
-            );
-            if (nextPosition && nextPosition.piece(gameState)) {
-              canMoveToGet.push(nextPosition);
-            }
-          }
-        }
-      }
-    }
-    return canMoveToGet;
   }
 }
 
@@ -203,41 +179,21 @@ export class Bishop extends Piece {
           i * direction[0],
           i * direction[1]
         );
-        if (!nextPosition || (nextPosition && nextPosition.piece(gameState))) {
-          break;
-        }
-        canMoveTo.push(nextPosition);
-      }
-    }
-
-    return canMoveTo;
-  }
-  canMoveToGet(gameState: GameState): Position[] {
-    if (!this.position) {
-      return [];
-    }
-    let canMoveToGet: Position[] = [];
-    for (let direction of [
-      [-1, -1],
-      [-1, 1],
-      [1, -1],
-      [1, 1],
-    ]) {
-      for (let i = 1; i < boardSize; i++) {
-        const nextPosition = this.position.addNumber(
-          i * direction[0],
-          i * direction[1]
-        );
-        if (!nextPosition) {
-          break;
-        }
-        if (nextPosition.piece(gameState)) {
-          canMoveToGet.push(nextPosition);
+        if (nextPosition) {
+          const nextPositionPiece = nextPosition.piece(gameState);
+          if (!nextPositionPiece) {
+            canMoveTo.push(nextPosition);
+            continue;
+          }
+          if (nextPositionPiece.player !== this.player) {
+            canMoveTo.push(nextPosition);
+          }
         }
         break;
       }
     }
-    return canMoveToGet;
+
+    return canMoveTo;
   }
 }
 
@@ -259,40 +215,21 @@ export class Rook extends Piece {
           i * direction[0],
           i * direction[1]
         );
-        if (!nextPosition || (nextPosition && nextPosition.piece(gameState))) {
-          break;
+        if (nextPosition) {
+          const nextPositionPiece = nextPosition.piece(gameState);
+          if (!nextPositionPiece) {
+            canMoveTo.push(nextPosition);
+            continue;
+          }
+          if (nextPositionPiece.player !== this.player) {
+            canMoveTo.push(nextPosition);
+          }
         }
-        canMoveTo.push(nextPosition);
+        break;
       }
     }
 
     return canMoveTo;
-  }
-  canMoveToGet(gameState: GameState): Position[] {
-    if (!this.position) {
-      return [];
-    }
-    let canMoveToGet: Position[] = [];
-    for (let direction of [
-      [-1, 0],
-      [0, -1],
-      [0, 1],
-      [1, 0],
-    ]) {
-      for (let i = 1; i < boardSize; i++) {
-        const nextPosition = this.position.addNumber(
-          i * direction[0],
-          i * direction[1]
-        );
-        if (!nextPosition) {
-          break;
-        }
-        if (nextPosition.piece(gameState)) {
-          canMoveToGet.push(nextPosition);
-        }
-      }
-    }
-    return canMoveToGet;
   }
 }
 
@@ -317,44 +254,21 @@ export class Queen extends Piece {
           i * direction[0],
           i * direction[1]
         );
-        if (!nextPosition || (nextPosition && nextPosition.piece(gameState))) {
-          break;
+        if (nextPosition) {
+          const nextPositionPiece = nextPosition.piece(gameState);
+          if (!nextPositionPiece) {
+            canMoveTo.push(nextPosition);
+            continue;
+          }
+          if (nextPositionPiece.player !== this.player) {
+            canMoveTo.push(nextPosition);
+          }
         }
-        canMoveTo.push(nextPosition);
+        break;
       }
     }
 
     return canMoveTo;
-  }
-  canMoveToGet(gameState: GameState): Position[] {
-    if (!this.position) {
-      return [];
-    }
-    let canMoveToGet: Position[] = [];
-    for (let direction of [
-      [-1, -1],
-      [-1, 1],
-      [1, -1],
-      [1, 1],
-      [-1, 0],
-      [0, -1],
-      [0, 1],
-      [1, 0],
-    ]) {
-      for (let i = 1; i < boardSize; i++) {
-        const nextPosition = this.position.addNumber(
-          i * direction[0],
-          i * direction[1]
-        );
-        if (!nextPosition) {
-          break;
-        }
-        if (nextPosition.piece(gameState)) {
-          canMoveToGet.push(nextPosition);
-        }
-      }
-    }
-    return canMoveToGet;
   }
 }
 
@@ -376,38 +290,17 @@ export class King extends Piece {
       [1, 0],
     ]) {
       const nextPosition = this.position.addNumber(direction[0], direction[1]);
-      if (!nextPosition || (nextPosition && nextPosition.piece(gameState))) {
-        break;
+      if (nextPosition) {
+        const nextPositionPiece = nextPosition.piece(gameState);
+        if (
+          !nextPositionPiece ||
+          (nextPositionPiece && nextPositionPiece.player === this.player)
+        )
+          canMoveTo.push(nextPosition);
       }
-      canMoveTo.push(nextPosition);
     }
 
     return canMoveTo;
-  }
-  canMoveToGet(gameState: GameState): Position[] {
-    if (!this.position) {
-      return [];
-    }
-    let canMoveToGet: Position[] = [];
-    for (let direction of [
-      [-1, -1],
-      [-1, 1],
-      [1, -1],
-      [1, 1],
-      [-1, 0],
-      [0, -1],
-      [0, 1],
-      [1, 0],
-    ]) {
-      const nextPosition = this.position.addNumber(direction[0], direction[1]);
-      if (!nextPosition) {
-        break;
-      }
-      if (nextPosition.piece(gameState)) {
-        canMoveToGet.push(nextPosition);
-      }
-    }
-    return canMoveToGet;
   }
 }
 
@@ -441,27 +334,27 @@ const useGame = () => {
   type Select = false | Piece;
   const [select, setSelect] = useState<Select>(false);
 
-  const move = () => {
-    setGameState(gameState);
-    setPlayer(player === "White" ? "Black" : "White");
-    setSelect(false);
-  };
-
   const handleClick = (position: Position) => {
     return () => {
       if (!select) {
         const piece = position.piece(gameState);
         if (piece && piece.player === player) {
-          alert("hoge");
           setSelect(piece);
         }
       } else {
+        console.log(select.canMoveTo(gameState));
         if (position.in(select.canMoveTo(gameState))) {
-          gameState.find((piece) => piece.equal(select))?.moveTo(position);
-          move();
-        } else if (position.in(select.canMoveToGet(gameState))) {
-          gameState.find((piece) => piece.equal(select))?.moveTo(position);
-          move();
+          const piece = position.piece(gameState);
+
+          if (piece) {
+            piece.removed();
+          }
+          select.moveTo(position);
+          setGameState(gameState);
+          setPlayer(player === "White" ? "Black" : "White");
+          setSelect(false);
+        } else {
+          setSelect(false);
         }
       }
     };
