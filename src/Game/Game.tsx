@@ -50,7 +50,6 @@ interface SquareProps {
 }
 
 const Square: React.FC<SquareProps> = (props) => {
-  // ジェネリックでよりよく書ける
   let visual = "";
   if (props.piece) {
     if (props.piece.type === "pawn") {
