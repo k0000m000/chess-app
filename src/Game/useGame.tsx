@@ -4,6 +4,8 @@ export const boardSize = 8;
 export type Player = "Black" | "White";
 export type File = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
 export type Rank = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8";
+export type Select = false | Piece;
+
 export class Position {
   file: File;
   rank: Rank;
@@ -114,7 +116,7 @@ export class Pawn extends Piece {
       const nextPosition =
         this.player === "White"
           ? this.position.addNumber(direction[0], 1)
-          : this.position.addNumber(direction[1], -1);
+          : this.position.addNumber(direction[0], -1);
       if (nextPosition && nextPosition.piece(gameState)) {
         canMoveTo.push(nextPosition);
       }
@@ -144,13 +146,12 @@ export class Knight extends Piece {
               i * direction[0],
               j * direction[1]
             );
-            if (nextPosition) {
-              const nextPositionPiece = nextPosition.piece(gameState);
-              if (
-                !nextPositionPiece ||
-                (nextPositionPiece && nextPositionPiece.player === this.player)
-              )
-                canMoveTo.push(nextPosition);
+            if (
+              nextPosition &&
+              (!nextPosition.piece(gameState) ||
+                nextPosition.piece(gameState)?.player !== this.player)
+            ) {
+              canMoveTo.push(nextPosition);
             }
           }
         }
@@ -179,17 +180,16 @@ export class Bishop extends Piece {
           i * direction[0],
           i * direction[1]
         );
-        if (nextPosition) {
-          const nextPositionPiece = nextPosition.piece(gameState);
-          if (!nextPositionPiece) {
-            canMoveTo.push(nextPosition);
-            continue;
-          }
-          if (nextPositionPiece.player !== this.player) {
-            canMoveTo.push(nextPosition);
-          }
+        if (
+          nextPosition &&
+          (!nextPosition.piece(gameState) ||
+            nextPosition.piece(gameState)?.player !== this.player)
+        ) {
+          canMoveTo.push(nextPosition);
         }
-        break;
+        if (!nextPosition || nextPosition.piece(gameState)) {
+          break;
+        }
       }
     }
 
@@ -215,17 +215,16 @@ export class Rook extends Piece {
           i * direction[0],
           i * direction[1]
         );
-        if (nextPosition) {
-          const nextPositionPiece = nextPosition.piece(gameState);
-          if (!nextPositionPiece) {
-            canMoveTo.push(nextPosition);
-            continue;
-          }
-          if (nextPositionPiece.player !== this.player) {
-            canMoveTo.push(nextPosition);
-          }
+        if (
+          nextPosition &&
+          (!nextPosition.piece(gameState) ||
+            nextPosition.piece(gameState)?.player !== this.player)
+        ) {
+          canMoveTo.push(nextPosition);
         }
-        break;
+        if (!nextPosition || nextPosition.piece(gameState)) {
+          break;
+        }
       }
     }
 
@@ -241,6 +240,7 @@ export class Queen extends Piece {
     }
     let canMoveTo: Position[] = [];
     for (let direction of [
+      [-1, -1],
       [-1, 1],
       [1, -1],
       [1, 1],
@@ -254,17 +254,16 @@ export class Queen extends Piece {
           i * direction[0],
           i * direction[1]
         );
-        if (nextPosition) {
-          const nextPositionPiece = nextPosition.piece(gameState);
-          if (!nextPositionPiece) {
-            canMoveTo.push(nextPosition);
-            continue;
-          }
-          if (nextPositionPiece.player !== this.player) {
-            canMoveTo.push(nextPosition);
-          }
+        if (
+          nextPosition &&
+          (!nextPosition.piece(gameState) ||
+            nextPosition.piece(gameState)?.player !== this.player)
+        ) {
+          canMoveTo.push(nextPosition);
         }
-        break;
+        if (!nextPosition || nextPosition.piece(gameState)) {
+          break;
+        }
       }
     }
 
@@ -290,13 +289,12 @@ export class King extends Piece {
       [1, 0],
     ]) {
       const nextPosition = this.position.addNumber(direction[0], direction[1]);
-      if (nextPosition) {
-        const nextPositionPiece = nextPosition.piece(gameState);
-        if (
-          !nextPositionPiece ||
-          (nextPositionPiece && nextPositionPiece.player === this.player)
-        )
-          canMoveTo.push(nextPosition);
+      if (
+        nextPosition &&
+        (!nextPosition.piece(gameState) ||
+          nextPosition.piece(gameState)?.player !== this.player)
+      ) {
+        canMoveTo.push(nextPosition);
       }
     }
 
@@ -330,9 +328,37 @@ const useGame = () => {
 
   const [gameState, setGameState] = useState<GameState>(defaultGameState);
   const [player, setPlayer] = useState<Player>("White");
-
-  type Select = false | Piece;
   const [select, setSelect] = useState<Select>(false);
+  const [isChecked, setIseCheckd] = useState<boolean>(false);
+
+  const isKingCheckd = (player: Player, gameState: GameState): boolean => {
+    const king = gameState.find(
+      (piece) => piece.type === "king" && piece.player === player
+    );
+    for (const piece of gameState) {
+      if (
+        piece.player !== player &&
+        king?.position?.in(piece.canMoveTo(gameState))
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const turnChange = (position: Position) => {
+    if (!select) {
+      return;
+    }
+    select.moveTo(position);
+    const opponetKing = gameState.find(
+      (piece) => piece.type === "king" && piece.player !== player
+    );
+    const isChecked = false;
+    setGameState(gameState);
+    setPlayer(player === "White" ? "Black" : "White");
+    setSelect(false);
+  };
 
   const handleClick = (position: Position) => {
     return () => {
@@ -342,17 +368,15 @@ const useGame = () => {
           setSelect(piece);
         }
       } else {
-        console.log(select.canMoveTo(gameState));
         if (position.in(select.canMoveTo(gameState))) {
+          if (isKingCheckd(player, gameState.map())) {
+          }
           const piece = position.piece(gameState);
 
           if (piece) {
             piece.removed();
           }
           select.moveTo(position);
-          setGameState(gameState);
-          setPlayer(player === "White" ? "Black" : "White");
-          setSelect(false);
         } else {
           setSelect(false);
         }
