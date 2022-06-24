@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import cloneDeep from "lodash/cloneDeep";
 
 export const boardSize = 8;
@@ -349,35 +349,43 @@ const useGame = () => {
     );
   };
 
-  const handleClick = (position: Position) => {
-    return () => {
-      if (!select) {
-        const piece = position.piece(gameState);
-        if (piece && piece.player === player) {
-          setSelect(piece);
-        }
-      } else {
-        if (position.in(select.canMoveTo(gameState))) {
-          const gameStateClone = cloneDeep(gameState);
-          gameStateClone.find((piece) => piece.equal(select))?.moveTo(position);
-          if (!checkIsChecked(player, gameStateClone)) {
-            if (position.piece(gameState)) {
-              position.piece(gameState)?.removed();
-            }
-            select.moveTo(position);
-            setGameState(gameState);
-            setPlayer(player === "White" ? "Black" : "White");
-
-            setIseCheckd(
-              checkIsChecked(player === "White" ? "Black" : "White", gameState)
-            );
+  const handleClick = useCallback(
+    (position: Position) => {
+      return () => {
+        if (!select) {
+          const piece = position.piece(gameState);
+          if (piece && piece.player === player) {
+            setSelect(piece);
           }
-        }
+        } else {
+          if (position.in(select.canMoveTo(gameState))) {
+            const gameStateClone = cloneDeep(gameState);
+            gameStateClone
+              .find((piece) => piece.equal(select))
+              ?.moveTo(position);
+            if (!checkIsChecked(player, gameStateClone)) {
+              if (position.piece(gameState)) {
+                position.piece(gameState)?.removed();
+              }
+              select.moveTo(position);
+              setGameState(gameState);
+              setPlayer(player === "White" ? "Black" : "White");
 
-        setSelect(false);
-      }
-    };
-  };
+              setIseCheckd(
+                checkIsChecked(
+                  player === "White" ? "Black" : "White",
+                  gameState
+                )
+              );
+            }
+          }
+
+          setSelect(false);
+        }
+      };
+    },
+    [gameState, player, select]
+  );
 
   return { gameState, select, player, isChecked, handleClick };
 };

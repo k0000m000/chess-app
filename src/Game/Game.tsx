@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { memo } from "react";
 import styled from "styled-components";
 
 import useGame, {
@@ -9,6 +9,7 @@ import useGame, {
   boardSize,
   OptinalPiece,
   Select,
+  Player,
 } from "./useGame";
 
 const Game: React.FC = () => {
@@ -70,7 +71,7 @@ interface SquareProps {
   onClick: React.MouseEventHandler<HTMLButtonElement>;
 }
 
-const Square: React.FC<SquareProps> = (props) => {
+const Square: React.FC<SquareProps> = memo((props) => {
   let visual = "";
   if (props.piece) {
     if (props.piece.type === "pawn") {
@@ -112,6 +113,6 @@ const Square: React.FC<SquareProps> = (props) => {
   `;
 
   return <Square onClick={props.onClick}>{visual}</Square>;
-};
+});
 
 export default Game;
