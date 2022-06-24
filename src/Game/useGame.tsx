@@ -331,32 +331,30 @@ const useGame = () => {
   const [select, setSelect] = useState<Select>(false);
   const [isChecked, setIseCheckd] = useState<boolean>(false);
 
-  const isKingCheckd = (player: Player, gameState: GameState): boolean => {
-    const king = gameState.find(
-      (piece) => piece.type === "king" && piece.player === player
-    );
-    for (const piece of gameState) {
-      if (
-        piece.player !== player &&
-        king?.position?.in(piece.canMoveTo(gameState))
-      ) {
-        return true;
-      }
-    }
-    return false;
-  };
-
   const turnChange = (position: Position) => {
     if (!select) {
       return;
     }
     select.moveTo(position);
-    const opponetKing = gameState.find(
+    if (position.piece(gameState)) {
+      position.piece(gameState)?.removed();
+    }
+    const opponetKingPosition = gameState.find(
       (piece) => piece.type === "king" && piece.player !== player
-    );
-    const isChecked = false;
+    )?.position;
+    if (!opponetKingPosition) {
+      return;
+    }
+    let isOppnentKingCheckd = false;
+
+    for (const piece of gameState.filter((piece) => piece.player === player)) {
+      if (opponetKingPosition.in(piece.canMoveTo(gameState))) {
+        isOppnentKingCheckd = true;
+      }
+    }
     setGameState(gameState);
     setPlayer(player === "White" ? "Black" : "White");
+    setIseCheckd(isOppnentKingCheckd);
     setSelect(false);
   };
 
@@ -368,19 +366,77 @@ const useGame = () => {
           setSelect(piece);
         }
       } else {
-        if (position.in(select.canMoveTo(gameState))) {
-          if (isKingCheckd(player, gameState.map())) {
-          }
-          const piece = position.piece(gameState);
+        const myKingPosition = gameState.find(
+          (piece) => piece.player === player && piece.type === "king"
+        )?.position;
+        if (!myKingPosition) {
+          return;
+        }
 
-          if (piece) {
-            piece.removed();
+        let isMyKingCheckd = false;
+
+        if (position.in(select.canMoveTo(gameState))) {
+          for (const direction of [
+            [-1, -1],
+            [-1, 1],
+            [1, -1],
+            [1, 1],
+            [-1, 0],
+            [0, -1],
+            [0, 1],
+            [1, 0],
+          ]) {
+            for (let i = 0; i < boardSize; i++) {
+              const checkPosition = myKingPosition.addNumber(
+                i * direction[0],
+                i * direction[1]
+              );
+              if (!checkPosition) {
+                break;
+              }
+              const checkPiece = checkPosition.piece(gameState);
+              if (checkPiece) {
+                if (
+                  checkPiece &&
+                  checkPiece.player !== player &&
+                  ((checkPiece.type === "bishop" &&
+                    JSON.stringify(direction) in
+                      [
+                        [-1, -1],
+                        [-1, 1],
+                        [1, -1],
+                        [1, 1],
+                      ].map((direction) => JSON.stringify(direction))) ||
+                    (checkPiece.type === "rook" &&
+                      JSON.stringify(direction) in
+                        [
+                          [-1, 0],
+                          [0, -1],
+                          [0, 1],
+                          [1, 0],
+                        ].map((direction) => JSON.stringify(direction))) ||
+                    checkPiece.type === "queen")
+                ) {
+                  isMyKingCheckd = true;
+                }
+                if (checkPiece.equal(select)) {
+                  continue;
+                }
+                break;
+              }
+            }
           }
-          select.moveTo(position);
-        } else {
-          setSelect(false);
+          if (!isMyKingCheckd) {
+            const piece = position.piece(gameState);
+
+            if (piece) {
+              piece.removed();
+            }
+            select.moveTo(position);
+          }
         }
       }
+      setSelect(false);
     };
   };
 
