@@ -1,4 +1,5 @@
 import { useState } from "react";
+import cloneDeep from "lodash/cloneDeep";
 
 export const boardSize = 8;
 export type Player = "Black" | "White";
@@ -117,7 +118,11 @@ export class Pawn extends Piece {
         this.player === "White"
           ? this.position.addNumber(direction[0], 1)
           : this.position.addNumber(direction[0], -1);
-      if (nextPosition && nextPosition.piece(gameState)) {
+      if (
+        nextPosition &&
+        nextPosition.piece(gameState) &&
+        nextPosition.piece(gameState)?.player !== this.player
+      ) {
         canMoveTo.push(nextPosition);
       }
     }
@@ -331,31 +336,17 @@ const useGame = () => {
   const [select, setSelect] = useState<Select>(false);
   const [isChecked, setIseCheckd] = useState<boolean>(false);
 
-  const turnChange = (position: Position) => {
-    if (!select) {
-      return;
-    }
-    select.moveTo(position);
-    if (position.piece(gameState)) {
-      position.piece(gameState)?.removed();
-    }
-    const opponetKingPosition = gameState.find(
-      (piece) => piece.type === "king" && piece.player !== player
+  const checkIsChecked = (player: Player, gameState: GameState): boolean => {
+    const kingPosition = gameState.find(
+      (piece) => piece.player === player && piece.type === "king"
     )?.position;
-    if (!opponetKingPosition) {
-      return;
+    if (!kingPosition) {
+      return false;
     }
-    let isOppnentKingCheckd = false;
-
-    for (const piece of gameState.filter((piece) => piece.player === player)) {
-      if (opponetKingPosition.in(piece.canMoveTo(gameState))) {
-        isOppnentKingCheckd = true;
-      }
-    }
-    setGameState(gameState);
-    setPlayer(player === "White" ? "Black" : "White");
-    setIseCheckd(isOppnentKingCheckd);
-    setSelect(false);
+    return !!gameState.find(
+      (piece) =>
+        piece.player !== player && kingPosition.in(piece.canMoveTo(gameState))
+    );
   };
 
   const handleClick = (position: Position) => {
@@ -366,81 +357,29 @@ const useGame = () => {
           setSelect(piece);
         }
       } else {
-        const myKingPosition = gameState.find(
-          (piece) => piece.player === player && piece.type === "king"
-        )?.position;
-        if (!myKingPosition) {
-          return;
-        }
-
-        let isMyKingCheckd = false;
-
         if (position.in(select.canMoveTo(gameState))) {
-          for (const direction of [
-            [-1, -1],
-            [-1, 1],
-            [1, -1],
-            [1, 1],
-            [-1, 0],
-            [0, -1],
-            [0, 1],
-            [1, 0],
-          ]) {
-            for (let i = 0; i < boardSize; i++) {
-              const checkPosition = myKingPosition.addNumber(
-                i * direction[0],
-                i * direction[1]
-              );
-              if (!checkPosition) {
-                break;
-              }
-              const checkPiece = checkPosition.piece(gameState);
-              if (checkPiece) {
-                if (
-                  checkPiece &&
-                  checkPiece.player !== player &&
-                  ((checkPiece.type === "bishop" &&
-                    JSON.stringify(direction) in
-                      [
-                        [-1, -1],
-                        [-1, 1],
-                        [1, -1],
-                        [1, 1],
-                      ].map((direction) => JSON.stringify(direction))) ||
-                    (checkPiece.type === "rook" &&
-                      JSON.stringify(direction) in
-                        [
-                          [-1, 0],
-                          [0, -1],
-                          [0, 1],
-                          [1, 0],
-                        ].map((direction) => JSON.stringify(direction))) ||
-                    checkPiece.type === "queen")
-                ) {
-                  isMyKingCheckd = true;
-                }
-                if (checkPiece.equal(select)) {
-                  continue;
-                }
-                break;
-              }
-            }
-          }
-          if (!isMyKingCheckd) {
-            const piece = position.piece(gameState);
-
-            if (piece) {
-              piece.removed();
+          const gameStateClone = cloneDeep(gameState);
+          gameStateClone.find((piece) => piece.equal(select))?.moveTo(position);
+          if (!checkIsChecked(player, gameStateClone)) {
+            if (position.piece(gameState)) {
+              position.piece(gameState)?.removed();
             }
             select.moveTo(position);
+            setGameState(gameState);
+            setPlayer(player === "White" ? "Black" : "White");
+
+            setIseCheckd(
+              checkIsChecked(player === "White" ? "Black" : "White", gameState)
+            );
           }
         }
+
+        setSelect(false);
       }
-      setSelect(false);
     };
   };
 
-  return { gameState, select, player, handleClick };
+  return { gameState, select, player, isChecked, handleClick };
 };
 
 export default useGame;
