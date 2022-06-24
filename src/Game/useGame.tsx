@@ -350,7 +350,12 @@ const useGame = () => {
   };
 
   const handleClick = useCallback(
-    (position: Position) => {
+    (
+      position: Position,
+      gameState: GameState,
+      player: Player,
+      select: Select
+    ) => {
       return () => {
         if (!select) {
           const piece = position.piece(gameState);
@@ -384,7 +389,7 @@ const useGame = () => {
         }
       };
     },
-    [gameState, player, select]
+    []
   );
 
   return { gameState, select, player, isChecked, handleClick };

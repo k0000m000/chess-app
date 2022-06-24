@@ -21,6 +21,7 @@ const Game: React.FC = () => {
       <p>{isChecked ? "check" : ""}</p>
       <Board
         gameState={gameState}
+        player={player}
         select={select}
         onClick={handleClick}
       ></Board>
@@ -30,8 +31,14 @@ const Game: React.FC = () => {
 
 interface BoardProps {
   gameState: GameState;
+  player: Player;
   select: Select;
-  onClick: (position: Position) => React.MouseEventHandler<HTMLButtonElement>;
+  onClick: (
+    position: Position,
+    gameState: GameState,
+    player: Player,
+    select: Select
+  ) => React.MouseEventHandler<HTMLButtonElement>;
 }
 
 const Board: React.FC<BoardProps> = (props) => {
@@ -49,7 +56,12 @@ const Board: React.FC<BoardProps> = (props) => {
           canMoveTo={
             props.select && position.in(props.select.canMoveTo(props.gameState))
           }
-          onClick={props.onClick(position)}
+          onClick={props.onClick(
+            position,
+            props.gameState,
+            props.player,
+            props.select
+          )}
         />
       );
     })
