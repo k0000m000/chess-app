@@ -334,7 +334,8 @@ const useGame = () => {
   const [gameState, setGameState] = useState<GameState>(defaultGameState);
   const [player, setPlayer] = useState<Player>("White");
   const [select, setSelect] = useState<Select>(false);
-  const [isChecked, setIseCheckd] = useState<boolean>(false);
+  const [isChecked, setIsCheckd] = useState<boolean>(false);
+  const [isCheckMate, setIsCheckMate] = useState<boolean>(false);
 
   const checkIsChecked = (player: Player, gameState: GameState): boolean => {
     const kingPosition = gameState.find(
@@ -374,14 +375,29 @@ const useGame = () => {
               }
               select.moveTo(position);
               setGameState(gameState);
-              setPlayer(player === "White" ? "Black" : "White");
-
-              setIseCheckd(
-                checkIsChecked(
-                  player === "White" ? "Black" : "White",
-                  gameState
-                )
-              );
+              const newPlayer = player === "White" ? "Black" : "White";
+              setPlayer(newPlayer);
+              const nextIsChecked = checkIsChecked(newPlayer, gameState);
+              setIsCheckd(nextIsChecked);
+              if (nextIsChecked) {
+                const king = gameState.find(
+                  (piece) => piece.player === newPlayer && piece.type === "king"
+                );
+                let isCheckMate = true;
+                if (king) {
+                  for (const position of king.canMoveTo(gameState)) {
+                    const gameStateClone = cloneDeep(gameState);
+                    gameStateClone
+                      .find((piece) => piece === king)
+                      ?.moveTo(position);
+                    if (!checkIsChecked(newPlayer, gameStateClone)) {
+                      isCheckMate = false;
+                    }
+                  }
+                }
+                setIsCheckMate(isCheckMate);
+                console.log(isCheckMate);
+              }
             }
           }
 
@@ -392,7 +408,7 @@ const useGame = () => {
     []
   );
 
-  return { gameState, select, player, isChecked, handleClick };
+  return { gameState, select, player, isChecked, isCheckMate, handleClick };
 };
 
 export default useGame;

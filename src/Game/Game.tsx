@@ -13,12 +13,13 @@ import useGame, {
 } from "./useGame";
 
 const Game: React.FC = () => {
-  const { gameState, select, player, isChecked, handleClick } = useGame();
+  const { gameState, select, player, isChecked, isCheckMate, handleClick } =
+    useGame();
 
   return (
     <div>
       <h1>{`${player} turn`}</h1>
-      <p>{isChecked ? "check" : ""}</p>
+      <p>{isCheckMate ? "checkmate" : isChecked ? "check" : ""}</p>
       <Board
         gameState={gameState}
         player={player}
